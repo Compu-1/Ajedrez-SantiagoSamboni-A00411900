@@ -80,7 +80,57 @@ export class ChessBoard {
      *        - Insertar el indicador dentro de la casilla.
      */
     render(gameState, selectedSquare, legalMoves = []) {
-        // TODO: Implementar el renderizado del tablero según la especificación de requerimientos de arriba.
+        // RF-CB-01: validación previa
+        if (!gameState || !gameState.board) {
+            return;
+        }
+
+        // Última jugada (origen y destino)
+        let lastFrom = null;
+        let lastTo = null;
+        if (gameState.moves && gameState.moves.length > 0) {
+            const lastMove = gameState.moves[gameState.moves.length - 1];
+            lastFrom = lastMove.fromPos;
+            lastTo = lastMove.toPos;
+        }
+
+        const sameSquare = (pos, r, c) => !!pos && pos.row === r && pos.col === c;
+        const moves = legalMoves || [];
+
+        for (let r = 0; r < 8; r++) {
+            for (let c = 0; c < 8; c++) {
+                const tile = this.tiles[r][c];
+                const piece = gameState.board[r] ? gameState.board[r][c] : null;
+
+                // RF-CB-01: clase base y limpieza
+                tile.className = `tile ${(r + c) % 2 === 0 ? "light" : "dark"}`;
+                tile.replaceChildren();
+
+                // RF-CB-02: última jugada y selección
+                if (sameSquare(lastFrom, r, c) || sameSquare(lastTo, r, c)) {
+                    tile.classList.add("last-move");
+                }
+                if (sameSquare(selectedSquare, r, c)) {
+                    tile.classList.add("selected");
+                }
+
+                // RF-CB-03: pieza
+                const hasPiece = !!(piece && piece.type && piece.type._name !== "PIECEEMPTY");
+                if (hasPiece) {
+                    const span = document.createElement("span");
+                    span.className = piece.color && piece.color._name === "COLORWHITE" ? "piece-white" : "piece-black";
+                    span.textContent = getPieceGlyph(piece);
+                    tile.appendChild(span);
+                }
+
+                // RF-CB-04: sugerencias de movimiento
+                if (moves.some((m) => sameSquare(m, r, c))) {
+                    const indicator = document.createElement("div");
+                    indicator.className = hasPiece ? "capture-ring" : "move-dot";
+                    tile.appendChild(indicator);
+                }
+            }
+        }
     }
 
     getElement() {
